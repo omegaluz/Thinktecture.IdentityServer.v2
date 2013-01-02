@@ -122,6 +122,7 @@
     <Compile Include="Models\Configuration\OAuth2Configuration.cs" />
     <Compile Include="Models\Configuration\FederationMetadataConfiguration.cs" />
     <Compile Include="Models\Configuration\ProtocolConfiguration.cs" />
+    <Compile Include="Models\RefreshToken.cs" />
     <Compile Include="Models\OAuth2ProviderTypes.cs" />
     <Compile Include="Models\DelegationSetting.cs" />
     <Compile Include="Endpoints.cs" />
@@ -129,6 +130,7 @@
     <Compile Include="Models\IdentityProvider.cs" />
     <Compile Include="Models\IdentityProviderTypes.cs" />
     <Compile Include="Models\Configuration\DiagnosticsConfiguration.cs" />
+    <Compile Include="Repositories\IRefreshTokenRepository.cs" />
     <Compile Include="Repositories\IClientsRepository.cs" />
     <Compile Include="Repositories\IConfigurationRepository.cs" />
     <Compile Include="Repositories\IClaimsRepository.cs" />
