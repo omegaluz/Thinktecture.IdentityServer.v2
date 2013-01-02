@@ -3,6 +3,7 @@
  * see license.txt
  */
 
+using System;
 using System.ComponentModel.Composition;
 using System.IdentityModel.Protocols.WSTrust;
 using System.Net;
@@ -66,7 +67,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                 return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidScope);
             }
 
-            // check grant type
+            // check grant type - password == resource owner password flow
             if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.Password, System.StringComparison.Ordinal))
             {
                 if (ConfigurationRepository.OAuth2.EnableResourceOwnerFlow)
@@ -80,6 +81,10 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                         Tracing.Error("Client is not allowed to use the resource owner password flow:" + client.Name);
                     }
                 }
+            } // or refresh token
+            else if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.RefreshToken, System.StringComparison.Ordinal))
+            {
+                return ProcessRefreshTokenRequest(client, tokenRequest.Refresh_Token);
             }
 
             Tracing.Error("invalid grant type: " + tokenRequest.Grant_Type);
@@ -96,32 +101,46 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                 return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidGrant);
             }
 
-            var auth = new AuthenticationHelper();
-            ClaimsPrincipal principal;
             if (UserRepository.ValidateUser(userName, password))
             {
-                principal = auth.CreatePrincipal(userName, "OAuth2",
-                    new Claim[]
-                        {
-                            new Claim(Constants.Claims.Client, client.Name),
-                            new Claim(Constants.Claims.Scope, appliesTo.Uri.AbsoluteUri)
-                        });
-
-                if (!ClaimsAuthorization.CheckAccess(principal, Constants.Actions.Issue, Constants.Resources.OAuth2))
-                {
-                    Tracing.Error("OAuth2 endpoint authorization failed for user: " + userName);
-                    return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidGrant);
-                }
+                return CreateTokenResponse(userName, client.Name, appliesTo, tokenType);
             }
             else
             {
                 Tracing.Error("Resource owner credential validation failed: " + userName);
                 return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidGrant);
             }
+        }
+
+        private HttpResponseMessage ProcessRefreshTokenRequest(Client client, string refreshToken)
+        {
+            throw new NotImplementedException();
+
+            // 1. get refresh token from DB - if not exists: error
+            // 2. make sure the client is the same - if not: error
+            // 3. call STS 
+        }
+
+        private HttpResponseMessage CreateTokenResponse(string userName, string clientName, EndpointReference scope, string tokenType)
+        {
+            var auth = new AuthenticationHelper();
+
+            var principal = auth.CreatePrincipal(userName, "OAuth2",
+                    new Claim[]
+                        {
+                            new Claim(Constants.Claims.Client, clientName),
+                            new Claim(Constants.Claims.Scope, scope.Uri.AbsoluteUri)
+                        });
+
+            if (!ClaimsAuthorization.CheckAccess(principal, Constants.Actions.Issue, Constants.Resources.OAuth2))
+            {
+                Tracing.Error("OAuth2 endpoint authorization failed for user: " + userName);
+                return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidGrant);
+            }
 
             var sts = new STS();
             TokenResponse tokenResponse;
-            if (sts.TryIssueToken(appliesTo, principal, tokenType, out tokenResponse))
+            if (sts.TryIssueToken(scope, principal, tokenType, out tokenResponse))
             {
                 var resp = Request.CreateResponse<TokenResponse>(HttpStatusCode.OK, tokenResponse);
                 return resp;
@@ -151,7 +170,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             var passwordClaim = ClaimsPrincipal.Current.FindFirst("password");
             if (passwordClaim == null)
             {
-                Tracing.Error("No password provided.");
+                Tracing.Error("No client secret provided.");
                 return false;
             }
 
