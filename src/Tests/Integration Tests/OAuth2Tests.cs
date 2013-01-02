@@ -70,7 +70,7 @@ namespace Thinktecture.IdentityServer.Tests
                 {
                     { OAuth2Constants.GrantType, "refresh_token" },
                     { "refresh_token", response.RefreshToken },
-                    { OAuth2Constants.scope, scope }
+                    { OAuth2Constants.Scope, scope }
                 });
 
             var httpClient = new HttpClient();
@@ -158,7 +158,7 @@ namespace Thinktecture.IdentityServer.Tests
                     { OAuth2Constants.GrantType, OAuth2Constants.Password },
                     { OAuth2Constants.UserName, Constants.Credentials.ValidUserName },
                     { OAuth2Constants.Password, "invalid" },
-                    { OAuth2Constants.scope, scope }
+                    { OAuth2Constants.Scope, scope }
                 });
 
             var client = new HttpClient();
@@ -177,7 +177,7 @@ namespace Thinktecture.IdentityServer.Tests
                     { OAuth2Constants.GrantType, OAuth2Constants.Password },
                     { OAuth2Constants.UserName, Constants.Credentials.UnauthorizedUserName },
                     { OAuth2Constants.Password, Constants.Credentials.ValidPassword },
-                    { OAuth2Constants.scope, scope }
+                    { OAuth2Constants.Scope, scope }
                 });
 
             var client = new HttpClient();
@@ -212,7 +212,7 @@ namespace Thinktecture.IdentityServer.Tests
                     { OAuth2Constants.GrantType, OAuth2Constants.Password },
                     { OAuth2Constants.UserName, Constants.Credentials.ValidUserName },
                     { OAuth2Constants.Password, Constants.Credentials.ValidUserName },
-                    { OAuth2Constants.scope, "invalid" }
+                    { OAuth2Constants.Scope, "invalid" }
                 });
 
             var client = new HttpClient();
@@ -230,7 +230,7 @@ namespace Thinktecture.IdentityServer.Tests
                     { OAuth2Constants.GrantType, "invalid" },
                     { OAuth2Constants.UserName, Constants.Credentials.ValidUserName },
                     { OAuth2Constants.Password, Constants.Credentials.ValidUserName },
-                    { OAuth2Constants.scope, scope }
+                    { OAuth2Constants.Scope, scope }
                 });
 
             var client = new HttpClient();
@@ -246,7 +246,7 @@ namespace Thinktecture.IdentityServer.Tests
             var form = new FormUrlEncodedContent(new Dictionary<string, string>
                 {
                     { OAuth2Constants.GrantType, OAuth2Constants.Password },
-                    { OAuth2Constants.scope, scope }
+                    { OAuth2Constants.Scope, scope }
                 });
 
             var client = new HttpClient();
