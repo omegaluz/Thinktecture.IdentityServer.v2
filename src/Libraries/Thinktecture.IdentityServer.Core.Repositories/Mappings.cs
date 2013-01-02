@@ -483,5 +483,18 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
         }
 
         #endregion
+
+        #region RefreshToken
+        public static Models.RefreshToken ToDomainModel(this Entities.RefreshToken token)
+        {
+            return new Models.RefreshToken
+            {
+                ClientId = token.ClientId,
+                Scope = token.Scope,
+                UserName = token.UserName,
+                TokenIdentifier = token.TokenIdentifier
+            };
+        }
+        #endregion
     }
 }

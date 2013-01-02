@@ -15,8 +15,8 @@ namespace Thinktecture.IdentityServer.Repositories
     /// </summary>
     public interface IRefreshTokenRepository
     {
-        string AddToken(string clientId, string userName, string scope);
-        RefreshToken GetToken(string tokenIdentifier);
+        string AddToken(int clientId, string userName, string scope);
+        bool TryGetToken(string tokenIdentifier, out RefreshToken token);
         void DeleteToken(string tokenIdentifier);
     }
 }

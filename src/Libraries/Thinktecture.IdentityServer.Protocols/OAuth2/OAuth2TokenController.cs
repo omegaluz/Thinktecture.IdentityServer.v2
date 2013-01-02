@@ -27,16 +27,20 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
         [Import]
         public IClientsRepository ClientsRepository { get; set; }
 
+        [Import]
+        public IRefreshTokenRepository RefreshTokenRepository { get; set; }
+
         public OAuth2TokenController()
         {
             Container.Current.SatisfyImportsOnce(this);
         }
 
-        public OAuth2TokenController(IUserRepository userRepository, IConfigurationRepository configurationRepository, IClientsRepository clientsRepository)
+        public OAuth2TokenController(IUserRepository userRepository, IConfigurationRepository configurationRepository, IClientsRepository clientsRepository, IRefreshTokenRepository refreshTokenRepository)
         {
             UserRepository = userRepository;
             ConfigurationRepository = configurationRepository;
             ClientsRepository = clientsRepository;
+            RefreshTokenRepository = refreshTokenRepository;
         }
 
         public HttpResponseMessage Post(TokenRequest tokenRequest)
@@ -103,7 +107,8 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
 
             if (UserRepository.ValidateUser(userName, password))
             {
-                return CreateTokenResponse(userName, client.Name, appliesTo, tokenType);
+                // TODO: make refresh token configurable
+                return CreateTokenResponse(userName, client, appliesTo, includeRefreshToken: true);
             }
             else
             {
@@ -114,21 +119,42 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
 
         private HttpResponseMessage ProcessRefreshTokenRequest(Client client, string refreshToken)
         {
-            throw new NotImplementedException();
+            Tracing.Information("Processing refresh token request for client: " + client.Name);
 
             // 1. get refresh token from DB - if not exists: error
-            // 2. make sure the client is the same - if not: error
-            // 3. call STS 
+            RefreshToken token;
+            if (RefreshTokenRepository.TryGetToken(refreshToken, out token))
+            {
+                // 2. make sure the client is the same - if not: error
+                if (token.ClientId == client.ID)
+                {
+                    // 3. call STS 
+                    // TODO: make refresh token configurable
+                    RefreshTokenRepository.DeleteToken(token.TokenIdentifier);
+                    return CreateTokenResponse(token.UserName, client, new EndpointReference(token.Scope), includeRefreshToken: true);
+                }
+
+                Tracing.Error("Invalid client for refresh token. " + client.Name + " / " + refreshToken);
+                return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidGrant);
+            }
+
+            Tracing.Error("Refresh token not found. " + client.Name + " / " + refreshToken);
+            return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidGrant);
         }
 
-        private HttpResponseMessage CreateTokenResponse(string userName, string clientName, EndpointReference scope, string tokenType)
+        private HttpResponseMessage CreateTokenResponse(string userName, Client client, EndpointReference scope, bool includeRefreshToken, string tokenType = null)
         {
+            if (string.IsNullOrWhiteSpace(tokenType))
+            {
+                tokenType = ConfigurationRepository.Global.DefaultHttpTokenType;
+            }
+
             var auth = new AuthenticationHelper();
 
             var principal = auth.CreatePrincipal(userName, "OAuth2",
                     new Claim[]
                         {
-                            new Claim(Constants.Claims.Client, clientName),
+                            new Claim(Constants.Claims.Client, client.Name),
                             new Claim(Constants.Claims.Scope, scope.Uri.AbsoluteUri)
                         });
 
@@ -142,6 +168,11 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             TokenResponse tokenResponse;
             if (sts.TryIssueToken(scope, principal, tokenType, out tokenResponse))
             {
+                if (includeRefreshToken)
+                {
+                    tokenResponse.RefreshToken = RefreshTokenRepository.AddToken(client.ID, userName, scope.Uri.AbsoluteUri);
+                }
+
                 var resp = Request.CreateResponse<TokenResponse>(HttpStatusCode.OK, tokenResponse);
                 return resp;
             }

@@ -107,6 +107,7 @@
     <Compile Include="ProviderUserManagementRepository.cs" />
     <Compile Include="ProviderUserRepository.cs" />
     <Compile Include="EntityModel\RelyingParties.cs" />
+    <Compile Include="RefreshTokenRepository.cs" />
     <Compile Include="RelyingPartyRepository.cs" />
   </ItemGroup>
   <ItemGroup>

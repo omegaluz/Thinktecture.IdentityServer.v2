@@ -28,6 +28,7 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
         public DbSet<RelyingParties> RelyingParties { get; set; }
         public DbSet<IdentityProvider> IdentityProviders { get; set; }
         public DbSet<Client> Clients { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         public static Func<IdentityServerConfigurationContext> FactoryMethod { get; set; }
 

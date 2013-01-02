@@ -13,7 +13,7 @@ namespace Thinktecture.IdentityServer.Models
     {
         public string TokenIdentifier { get; set; }
 
-        public string ClientId { get; set; }
+        public int ClientId { get; set; }
 
         public string UserName { get; set; }
 

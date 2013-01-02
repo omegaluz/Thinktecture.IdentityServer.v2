@@ -206,6 +206,31 @@ namespace Thinktecture.IdentityServer.Configuration
 
         #endregion
 
+        #region RefreshTokenRepository Property
+
+        /// <summary>
+        /// The XML name of the <see cref="ConfigurationProvider"/> property.
+        /// </summary>
+        internal const global::System.String RefreshTokenRepositoryPropertyName = "refreshTokenRepository";
+
+        /// <summary>
+        /// Gets or sets type of the class that provides encryption certificates
+        /// </summary>
+        [global::System.Configuration.ConfigurationProperty(RefreshTokenRepositoryPropertyName, IsRequired = false, IsKey = false, IsDefaultCollection = false, DefaultValue = "Thinktecture.IdentityServer.Repositories.Sql.RefreshTokenRepository, Thinktecture.IdentityServer.Core.Repositories")]
+        public global::System.String RefreshTokenRepository
+        {
+            get
+            {
+                return (global::System.String)base[RefreshTokenRepositoryPropertyName];
+            }
+            set
+            {
+                base[RefreshTokenRepositoryPropertyName] = value;
+            }
+        }
+
+        #endregion
+
         #region IdentityProvider Property
 
         /// <summary>
