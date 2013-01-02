@@ -14,7 +14,7 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
         {
             using (var entities = IdentityServerConfigurationContext.Get())
             {
-                var tokenId = Guid.NewGuid().ToString();
+                var tokenId = Guid.NewGuid().ToString("N");
 
                 var refreshToken = new RefreshToken
                 {
