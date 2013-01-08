@@ -91,14 +91,19 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                 // TODO: refresh tokens allowed?
                 return ProcessRefreshTokenRequest(client, tokenRequest.Refresh_Token);
             } // or code grant
-            //else if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.AuthorizationCode, System.StringComparison.Ordinal))
-            //{
-            //    // TODO: refresh tokens allowed?
-            //    return ProcessAuthorizationCodeRequest(client, tokenRequest.Code);
-            //}
+            else if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.AuthorizationCode, System.StringComparison.Ordinal))
+            {
+                // TODO: refresh tokens allowed?
+                return ProcessAuthorizationCodeRequest(client, tokenRequest.Code);
+            }
 
             Tracing.Error("invalid grant type: " + tokenRequest.Grant_Type);
             return OAuthErrorResponseMessage(OAuth2Constants.Errors.UnsupportedGrantType);
+        }
+
+        private HttpResponseMessage ProcessAuthorizationCodeRequest(Client client, string code)
+        {
+            return ProcessRefreshTokenRequest(client, code);
         }
 
         private HttpResponseMessage ProcessResourceOwnerCredentialRequest(string userName, string password, EndpointReference appliesTo, string tokenType, Client client)
