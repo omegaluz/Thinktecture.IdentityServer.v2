@@ -26,60 +26,31 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
         [Import]
         public IRelyingPartyRepository RPRepository { get; set; }
 
+        [Import]
+        public IRefreshTokenRepository RefreshTokenRepository { get; set; }
+
         public OAuth2AuthorizeController()
         {
             Container.Current.SatisfyImportsOnce(this);
         }
 
-        public OAuth2AuthorizeController(IConfigurationRepository configuration, IClientsRepository client, IRelyingPartyRepository rpRepository)
+        public OAuth2AuthorizeController(IConfigurationRepository configuration, IClientsRepository client, IRelyingPartyRepository rpRepository, IRefreshTokenRepository refreshTokenRepository)
         {
             Configuration = configuration;
             Clients = client;
             RPRepository = rpRepository;
-        }
-
-        private ActionResult CheckRequest(AuthorizeRequest request, out Client client)
-        {
-            // validate client
-            if (!Clients.TryGetClient(request.client_id, out client))
-            {
-                ViewBag.Message = "Invalid client_id : " + request.client_id;
-                return View("Error");
-            }
-
-            // validate redirect uri
-            if (string.IsNullOrEmpty(request.redirect_uri) || !string.Equals(request.redirect_uri, client.RedirectUri.AbsoluteUri, StringComparison.OrdinalIgnoreCase))
-            {
-                ViewBag.Message = "The redirect_uri in the request: " + request.redirect_uri + " did not match a registered redirect URI.";
-                return View("Error");
-            }
-
-            // validate scope (must be a valid URI)
-            Uri uri;
-            if (!Uri.TryCreate(request.scope, UriKind.Absolute, out uri))
-            {
-                return Error(client.RedirectUri, OAuth2Constants.Errors.InvalidScope, request.state);
-            }
-
-            return null;
+            RefreshTokenRepository = refreshTokenRepository;
         }
 
         [ActionName("Index")]
         [HttpGet]
         public ActionResult HandleRequest(AuthorizeRequest request)
         {
-            //
-            // first round of validation:
-            // missing, invalid, or mismatching redirection URI or
-            // missing or invalid client id
-            // show error page to user
-            //
-
             Client client;
             var error = CheckRequest(request, out client);
             if (error != null) return error;
 
-            // implicit grant
+            // supported response types
             if (request.response_type.Equals(OAuth2Constants.ResponseTypes.Token, StringComparison.Ordinal) ||
                 request.response_type.Equals(OAuth2Constants.ResponseTypes.Code, StringComparison.Ordinal))
             {
@@ -114,7 +85,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
         [ActionName("Index")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult HandleResponse(string button, AuthorizeRequest request)
+        public ActionResult HandleConsentResponse(string button, AuthorizeRequest request)
         {
             Client client;
             var error = CheckRequest(request, out client);
@@ -135,29 +106,69 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             return Error(client.RedirectUri, OAuth2Constants.Errors.UnsupportedResponseType, request.state);
         }
 
+        private ActionResult CheckRequest(AuthorizeRequest request, out Client client)
+        {
+            // validate client
+            if (!Clients.TryGetClient(request.client_id, out client))
+            {
+                ViewBag.Message = "Invalid client_id : " + request.client_id;
+                return View("Error");
+            }
+
+            // validate redirect uri
+            if (string.IsNullOrEmpty(request.redirect_uri) || !string.Equals(request.redirect_uri, client.RedirectUri.AbsoluteUri, StringComparison.OrdinalIgnoreCase))
+            {
+                ViewBag.Message = "The redirect_uri in the request: " + request.redirect_uri + " did not match a registered redirect URI.";
+                return View("Error");
+            }
+
+            // validate scope (must be a valid URI)
+            Uri uri;
+            if (!Uri.TryCreate(request.scope, UriKind.Absolute, out uri))
+            {
+                return Error(client.RedirectUri, OAuth2Constants.Errors.InvalidScope, request.state);
+            }
+
+            // TODO: validate if request grant type is allowed for client (implicit vs code flow)
+
+            return null;
+        }
+
         private ActionResult PerformGrant(AuthorizeRequest request, Client client)
         {
             // implicit grant
             if (request.response_type.Equals(OAuth2Constants.ResponseTypes.Token, StringComparison.Ordinal))
             {
-                return HandleImplicitGrant(request, client);
+                return PerformImplicitGrant(request, client);
             }
 
             // authorization code grant
             if (request.response_type.Equals(OAuth2Constants.ResponseTypes.Code, StringComparison.Ordinal))
             {
-                return HandleAuthorizationCodeGrant(request, client);
+                return PerformAuthorizationCodeGrant(request, client);
             }
 
             return null;
         }
 
-        private ActionResult HandleAuthorizationCodeGrant(AuthorizeRequest request, Client client)
+        private ActionResult PerformAuthorizationCodeGrant(AuthorizeRequest request, Client client)
         {
-            throw new System.NotImplementedException();
+            var code = RefreshTokenRepository.AddToken(client.ID, ClaimsPrincipal.Current.Identity.Name, request.scope);
+
+            var tokenString = string.Format("code={0}", code);
+            if (!string.IsNullOrEmpty(request.state))
+            {
+                tokenString = string.Format("{0}&state={1}", tokenString, request.state);
+            }
+
+            var redirectString = string.Format("{0}#{1}",
+                        client.RedirectUri.AbsoluteUri,
+                        tokenString);
+
+            return Redirect(redirectString);
         }
 
-        private ActionResult HandleImplicitGrant(AuthorizeRequest request, Client client)
+        private ActionResult PerformImplicitGrant(AuthorizeRequest request, Client client)
         {
             var sts = new STS();
             

@@ -88,8 +88,14 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             } // or refresh token
             else if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.RefreshToken, System.StringComparison.Ordinal))
             {
+                // TODO: refresh tokens allowed?
                 return ProcessRefreshTokenRequest(client, tokenRequest.Refresh_Token);
-            }
+            } // or code grant
+            //else if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.AuthorizationCode, System.StringComparison.Ordinal))
+            //{
+            //    // TODO: refresh tokens allowed?
+            //    return ProcessAuthorizationCodeRequest(client, tokenRequest.Code);
+            //}
 
             Tracing.Error("invalid grant type: " + tokenRequest.Grant_Type);
             return OAuthErrorResponseMessage(OAuth2Constants.Errors.UnsupportedGrantType);
