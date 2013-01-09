@@ -209,7 +209,8 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
                 Enabled = entity.Enabled,
                 EnableImplicitFlow = entity.EnableImplicitFlow,
                 EnableResourceOwnerFlow = entity.EnableResourceOwnerFlow,
-                EnableConsent = entity.EnableConsent
+                EnableConsent = entity.EnableConsent,
+                EnableCodeFlow = entity.EnableCodeFlow
             };
         }
 
@@ -220,7 +221,8 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
                 Enabled = model.Enabled,
                 EnableImplicitFlow = model.EnableImplicitFlow,
                 EnableResourceOwnerFlow = model.EnableResourceOwnerFlow,
-                EnableConsent = model.EnableConsent
+                EnableConsent = model.EnableConsent,
+                EnableCodeFlow = model.EnableCodeFlow
             };
         }
         #endregion
