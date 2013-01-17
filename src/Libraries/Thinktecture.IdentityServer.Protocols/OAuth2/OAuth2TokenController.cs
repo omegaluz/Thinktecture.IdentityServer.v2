@@ -59,16 +59,19 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             var tokenType = ConfigurationRepository.Global.DefaultHttpTokenType;
 
             // validate scope
-            EndpointReference appliesTo;
-            try
+            EndpointReference appliesTo = null;
+            if (tokenRequest.Grant_Type != OAuth2Constants.GrantTypes.AuthorizationCode)
             {
-                appliesTo = new EndpointReference(tokenRequest.Scope);
-                Tracing.Information("OAuth2 endpoint called for scope: " + tokenRequest.Scope);
-            }
-            catch
-            {
-                Tracing.Error("Malformed scope: " + tokenRequest.Scope);
-                return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidScope);
+                try
+                {
+                    appliesTo = new EndpointReference(tokenRequest.Scope);
+                    Tracing.Information("OAuth2 endpoint called for scope: " + tokenRequest.Scope);
+                }
+                catch
+                {
+                    Tracing.Error("Malformed scope: " + tokenRequest.Scope);
+                    return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidScope);
+                }
             }
 
             // check grant type - password == resource owner password flow

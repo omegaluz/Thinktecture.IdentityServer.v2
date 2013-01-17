@@ -129,6 +129,11 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                 return ClientError(client.RedirectUri, OAuth2Constants.Errors.InvalidScope, request.state);
             }
 
+            if (string.IsNullOrWhiteSpace(request.response_type))
+            {
+                return ClientError(client.RedirectUri, OAuth2Constants.Errors.UnsupportedResponseType, request.state);
+            }
+
             // validate if request grant type is allowed for client (implicit vs code flow)
             if (request.response_type.Equals(OAuth2Constants.ResponseTypes.Token) && 
                 !client.AllowImplicitFlow)
@@ -172,7 +177,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                 tokenString = string.Format("{0}&state={1}", tokenString, request.state);
             }
 
-            var redirectString = string.Format("{0}#{1}",
+            var redirectString = string.Format("{0}?{1}",
                         client.RedirectUri.AbsoluteUri,
                         tokenString);
 
