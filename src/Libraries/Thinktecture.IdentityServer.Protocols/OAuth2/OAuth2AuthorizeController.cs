@@ -19,67 +19,67 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
     {
         [Import]
         public IClientsRepository Clients { get; set; }
-        
+
         [Import]
         public IConfigurationRepository Configuration { get; set; }
-        
+
         [Import]
         public IRelyingPartyRepository RPRepository { get; set; }
 
         [Import]
-        public IRefreshTokenRepository RefreshTokenRepository { get; set; }
+        public ICodeTokenRepository CodeTokenRepository { get; set; }
 
         public OAuth2AuthorizeController()
         {
             Container.Current.SatisfyImportsOnce(this);
         }
 
-        public OAuth2AuthorizeController(IConfigurationRepository configuration, IClientsRepository client, IRelyingPartyRepository rpRepository, IRefreshTokenRepository refreshTokenRepository)
+        public OAuth2AuthorizeController(IConfigurationRepository configuration, IClientsRepository client, IRelyingPartyRepository rpRepository, ICodeTokenRepository codeTokenRepository)
         {
             Configuration = configuration;
             Clients = client;
             RPRepository = rpRepository;
-            RefreshTokenRepository = refreshTokenRepository;
+            CodeTokenRepository = codeTokenRepository;
         }
 
         [ActionName("Index")]
         [HttpGet]
         public ActionResult HandleRequest(AuthorizeRequest request)
         {
+            // check client
             Client client;
             var error = CheckRequest(request, out client);
             if (error != null) return error;
 
-            // supported response types
-            if (request.response_type.Equals(OAuth2Constants.ResponseTypes.Token, StringComparison.Ordinal) ||
-                request.response_type.Equals(OAuth2Constants.ResponseTypes.Code, StringComparison.Ordinal))
+            if (Configuration.OAuth2.EnableConsent)
             {
-                if (Configuration.OAuth2.EnableConsent)
+                RelyingParty rp;
+                if (RPRepository.TryGet(request.scope, out rp))
                 {
-                    RelyingParty rp;
-                    if (RPRepository.TryGet(request.scope, out rp))
+                    // show resource name, uri and client name
+                    // client is trying to access resource on your behalf
+                    var vm = new OAuth2ConsentViewModel
                     {
-                        // show resource name, uri and client name
-                        // client is trying to access resource on your behalf
-                        var vm = new OAuth2ConsentViewModel
-                        {
-                            ResourceUri = rp.Realm.AbsoluteUri,
-                            ResourceName = rp.Name,
-                            ClientName = client.ClientId
-                        };
+                        ResourceUri = rp.Realm.AbsoluteUri,
+                        ResourceName = rp.Name,
+                        ClientName = client.ClientId
+                    };
 
-                        return View("ShowConsent", vm);
-                    }
+                    return View("ShowConsent", vm);
                 }
                 else
                 {
-                    var grantResult = PerformGrant(request, client);
-                    if (grantResult != null) return grantResult;
+                    // unknown RP - error out
+                    return ClientError(client.RedirectUri, OAuth2Constants.Errors.InvalidScope, request.response_type, request.state);
                 }
             }
+            else
+            {
+                var grantResult = PerformGrant(request, client);
+                if (grantResult != null) return grantResult;
+            }
 
-            // todo: return appropiate error
-            return ClientError(client.RedirectUri, OAuth2Constants.Errors.UnsupportedResponseType, request.state);
+            return ClientError(client.RedirectUri, OAuth2Constants.Errors.InvalidRequest, request.response_type, request.state);
         }
 
         [ActionName("Index")]
@@ -93,7 +93,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
 
             if (button == "no")
             {
-                return ClientError(client.RedirectUri, OAuth2Constants.Errors.AccessDenied, request.state);
+                return ClientError(client.RedirectUri, OAuth2Constants.Errors.AccessDenied, request.response_type, request.state);
             }
 
             if (button == "yes")
@@ -103,7 +103,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             }
 
             // todo: return appropiate error
-            return ClientError(client.RedirectUri, OAuth2Constants.Errors.UnsupportedResponseType, request.state);
+            return ClientError(client.RedirectUri, OAuth2Constants.Errors.InvalidRequest, request.response_type, request.state);
         }
 
         private ActionResult CheckRequest(AuthorizeRequest request, out Client client)
@@ -122,29 +122,31 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                 return View("Error");
             }
 
+            // check response type (only code and token are supported)
+            if (!request.response_type.Equals(OAuth2Constants.ResponseTypes.Token, StringComparison.Ordinal) &&
+                !request.response_type.Equals(OAuth2Constants.ResponseTypes.Code, StringComparison.Ordinal))
+            {
+                return ClientError(client.RedirectUri, OAuth2Constants.Errors.UnsupportedResponseType, string.Empty, request.state);
+            }
+
             // validate scope (must be a valid URI)
             Uri uri;
             if (!Uri.TryCreate(request.scope, UriKind.Absolute, out uri))
             {
-                return ClientError(client.RedirectUri, OAuth2Constants.Errors.InvalidScope, request.state);
-            }
-
-            if (string.IsNullOrWhiteSpace(request.response_type))
-            {
-                return ClientError(client.RedirectUri, OAuth2Constants.Errors.UnsupportedResponseType, request.state);
+                return ClientError(client.RedirectUri, OAuth2Constants.Errors.InvalidScope, request.response_type, request.state);
             }
 
             // validate if request grant type is allowed for client (implicit vs code flow)
-            if (request.response_type.Equals(OAuth2Constants.ResponseTypes.Token) && 
+            if (request.response_type.Equals(OAuth2Constants.ResponseTypes.Token) &&
                 !client.AllowImplicitFlow)
             {
-                return ClientError(client.RedirectUri, OAuth2Constants.Errors.UnsupportedResponseType, request.state);
+                return ClientError(client.RedirectUri, OAuth2Constants.Errors.UnsupportedResponseType, request.response_type, request.state);
             }
 
             if (request.response_type.Equals(OAuth2Constants.ResponseTypes.Code) &&
                 !client.AllowCodeFlow)
             {
-                return ClientError(client.RedirectUri, OAuth2Constants.Errors.UnsupportedResponseType, request.state);
+                return ClientError(client.RedirectUri, OAuth2Constants.Errors.UnsupportedResponseType, request.response_type, request.state);
             }
 
             return null;
@@ -169,9 +171,9 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
 
         private ActionResult PerformAuthorizationCodeGrant(AuthorizeRequest request, Client client)
         {
-            var code = RefreshTokenRepository.AddToken(client.ID, ClaimsPrincipal.Current.Identity.Name, request.scope);
+            var code = CodeTokenRepository.AddCode(client.ID, ClaimsPrincipal.Current.Identity.Name, request.scope);
             var tokenString = string.Format("code={0}", code);
-            
+
             if (!string.IsNullOrEmpty(request.state))
             {
                 tokenString = string.Format("{0}&state={1}", tokenString, request.state);
@@ -187,7 +189,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
         private ActionResult PerformImplicitGrant(AuthorizeRequest request, Client client)
         {
             var sts = new STS();
-            
+
             TokenResponse tokenResponse;
             if (sts.TryIssueToken(
                     new EndpointReference(request.scope),
@@ -213,20 +215,26 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             }
 
             // return right error code
-            return ClientError(client.RedirectUri, OAuth2Constants.Errors.InvalidRequest, request.state);
+            return ClientError(client.RedirectUri, OAuth2Constants.Errors.InvalidRequest, request.response_type, request.state);
         }
 
-        private ActionResult ClientError(Uri redirectUri, string error, string state = null)
+        private ActionResult ClientError(Uri redirectUri, string error, string responseType, string state = null)
         {
             string url;
+            string separator = "?";
+
+            if (responseType == OAuth2Constants.ResponseTypes.Token)
+            {
+                separator = "#";
+            }
 
             if (string.IsNullOrEmpty(state))
             {
-                url = string.Format("{0}#error={1}", redirectUri.AbsoluteUri, error);
+                url = string.Format("{0}{1}error={2}", redirectUri.AbsoluteUri, separator, error);
             }
             else
             {
-                url = string.Format("{0}#error={1}&state={2}", redirectUri.AbsoluteUri, error, state);
+                url = string.Format("{0}{1}error={2}&state={3}", redirectUri.AbsoluteUri, separator, error, state);
             }
 
             return new RedirectResult(url);

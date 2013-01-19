@@ -13,10 +13,10 @@ namespace Thinktecture.IdentityServer.Repositories
     /// <summary>
     /// Repository for handling refresh tokens
     /// </summary>
-    public interface IRefreshTokenRepository
+    public interface ICodeTokenRepository
     {
-        string AddToken(int clientId, string userName, string scope);
-        bool TryGetToken(string tokenIdentifier, out RefreshToken token);
-        void DeleteToken(string tokenIdentifier);
+        string AddCode(int clientId, string userName, string scope);
+        bool TryGetCode(string tokenIdentifier, out CodeToken token);
+        void DeleteCode(string tokenIdentifier);
     }
 }

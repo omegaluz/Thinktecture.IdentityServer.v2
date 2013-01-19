@@ -9,9 +9,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Thinktecture.IdentityServer.Models
 {
-    public class RefreshToken
+    public class CodeToken
     {
-        public string TokenIdentifier { get; set; }
+        public string Code { get; set; }
 
         public int ClientId { get; set; }
 

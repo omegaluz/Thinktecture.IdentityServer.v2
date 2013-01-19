@@ -353,7 +353,18 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
                     ClientId = "test",
                     ClientSecret = "secret",
                     AllowImplicitFlow = true,
-                    AllowResourceOwnerFlow = true,
+                    AllowResourceOwnerFlow = false,
+                    AllowCodeFlow = false
+                },
+                new Client
+                {
+                    Name = "Code Flow Sample Client",
+                    Description = "Code Flow Sample Client",
+                    RedirectUri = "http://localhost:12345/callback",
+                    ClientId = "codeflowclient",
+                    ClientSecret = "secret",
+                    AllowImplicitFlow = false,
+                    AllowResourceOwnerFlow = false,
                     AllowCodeFlow = true
                 }
             };

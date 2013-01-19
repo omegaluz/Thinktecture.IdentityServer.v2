@@ -78,7 +78,7 @@
     <Compile Include="EntityModel\Configuration\WSFederationConfiguration.cs" />
     <Compile Include="EntityModel\Configuration\WSTrustConfiguration.cs" />
     <Compile Include="EntityModel\Client.cs" />
-    <Compile Include="EntityModel\RefreshToken.cs" />
+    <Compile Include="EntityModel\CodeToken.cs" />
     <Compile Include="IdentityServerConfigurationContext.cs" />
     <Compile Include="EntityModel\Configuration\GlobalConfiguration.cs" />
     <Compile Include="IdentityProviderRepository.cs" />
@@ -107,7 +107,7 @@
     <Compile Include="ProviderUserManagementRepository.cs" />
     <Compile Include="ProviderUserRepository.cs" />
     <Compile Include="EntityModel\RelyingParties.cs" />
-    <Compile Include="RefreshTokenRepository.cs" />
+    <Compile Include="CodeTokenRepository.cs" />
     <Compile Include="RelyingPartyRepository.cs" />
   </ItemGroup>
   <ItemGroup>

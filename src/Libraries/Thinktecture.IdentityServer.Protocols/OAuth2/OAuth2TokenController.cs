@@ -28,14 +28,14 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
         public IClientsRepository ClientsRepository { get; set; }
 
         [Import]
-        public IRefreshTokenRepository RefreshTokenRepository { get; set; }
+        public ICodeTokenRepository RefreshTokenRepository { get; set; }
 
         public OAuth2TokenController()
         {
             Container.Current.SatisfyImportsOnce(this);
         }
 
-        public OAuth2TokenController(IUserRepository userRepository, IConfigurationRepository configurationRepository, IClientsRepository clientsRepository, IRefreshTokenRepository refreshTokenRepository)
+        public OAuth2TokenController(IUserRepository userRepository, IConfigurationRepository configurationRepository, IClientsRepository clientsRepository, ICodeTokenRepository refreshTokenRepository)
         {
             UserRepository = userRepository;
             ConfigurationRepository = configurationRepository;
@@ -136,15 +136,15 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             Tracing.Information("Processing refresh token request for client: " + client.Name);
 
             // 1. get refresh token from DB - if not exists: error
-            RefreshToken token;
-            if (RefreshTokenRepository.TryGetToken(refreshToken, out token))
+            CodeToken token;
+            if (RefreshTokenRepository.TryGetCode(refreshToken, out token))
             {
                 // 2. make sure the client is the same - if not: error
                 if (token.ClientId == client.ID)
                 {
                     // 3. call STS 
                     // TODO: make refresh token configurable
-                    RefreshTokenRepository.DeleteToken(token.TokenIdentifier);
+                    RefreshTokenRepository.DeleteCode(token.Code);
                     return CreateTokenResponse(token.UserName, client, new EndpointReference(token.Scope), includeRefreshToken: true);
                 }
 
@@ -184,7 +184,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             {
                 if (includeRefreshToken)
                 {
-                    tokenResponse.RefreshToken = RefreshTokenRepository.AddToken(client.ID, userName, scope.Uri.AbsoluteUri);
+                    tokenResponse.RefreshToken = RefreshTokenRepository.AddCode(client.ID, userName, scope.Uri.AbsoluteUri);
                 }
 
                 var resp = Request.CreateResponse<TokenResponse>(HttpStatusCode.OK, tokenResponse);

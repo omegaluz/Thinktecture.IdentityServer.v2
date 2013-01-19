@@ -8,37 +8,37 @@ using System.Linq;
 
 namespace Thinktecture.IdentityServer.Repositories.Sql
 {
-    public class RefreshTokenRepository : IRefreshTokenRepository
+    public class CodeTokenRepository : ICodeTokenRepository
     {
-        public string AddToken(int clientId, string userName, string scope)
+        public string AddCode(int clientId, string userName, string scope)
         {
             using (var entities = IdentityServerConfigurationContext.Get())
             {
-                var tokenId = Guid.NewGuid().ToString("N");
+                var code = Guid.NewGuid().ToString("N");
 
-                var refreshToken = new RefreshToken
+                var refreshToken = new CodeToken
                 {
-                    TokenIdentifier = tokenId,
+                    Code = code,
                     ClientId = clientId,
                     Scope = scope,
                     UserName = userName
                 };
 
-                entities.RefreshTokens.Add(refreshToken);
+                entities.CodeTokens.Add(refreshToken);
                 entities.SaveChanges();
 
-                return tokenId;
+                return code;
             }
         }
 
-        public bool TryGetToken(string tokenIdentifier, out Models.RefreshToken token)
+        public bool TryGetCode(string code, out Models.CodeToken token)
         {
             token = null;
 
             using (var entities = IdentityServerConfigurationContext.Get())
             {
-                var entity = (from t in entities.RefreshTokens
-                              where t.TokenIdentifier.Equals(tokenIdentifier, StringComparison.OrdinalIgnoreCase)
+                var entity = (from t in entities.CodeTokens
+                              where t.Code.Equals(code, StringComparison.OrdinalIgnoreCase)
                               select t)
                              .FirstOrDefault();
 
@@ -54,14 +54,14 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
             }
         }
 
-        public void DeleteToken(string tokenIdentifier)
+        public void DeleteCode(string code)
         {
             using (var entities = IdentityServerConfigurationContext.Get())
             {
-                var item = entities.RefreshTokens.Where(x => x.TokenIdentifier.Equals(tokenIdentifier, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var item = entities.CodeTokens.Where(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if (item != null)
                 {
-                    entities.RefreshTokens.Remove(item);
+                    entities.CodeTokens.Remove(item);
                     entities.SaveChanges();
                 }
             }
