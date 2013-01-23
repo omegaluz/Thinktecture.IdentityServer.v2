@@ -18,5 +18,7 @@ namespace Thinktecture.IdentityServer.Models
         public string UserName { get; set; }
 
         public string Scope { get; set; }
+
+        public CodeTokenType Type { get; set; }
     }
 }

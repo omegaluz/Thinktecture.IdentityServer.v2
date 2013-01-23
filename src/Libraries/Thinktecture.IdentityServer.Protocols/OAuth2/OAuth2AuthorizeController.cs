@@ -172,7 +172,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
 
         private ActionResult PerformAuthorizationCodeGrant(AuthorizeRequest request, Client client)
         {
-            var code = CodeTokenRepository.AddCode(client.ID, ClaimsPrincipal.Current.Identity.Name, request.scope);
+            var code = CodeTokenRepository.AddCode(CodeTokenType.AuthorizationCode, client.ID, ClaimsPrincipal.Current.Identity.Name, request.scope);
             var tokenString = string.Format("code={0}", code);
 
             if (!string.IsNullOrEmpty(request.state))

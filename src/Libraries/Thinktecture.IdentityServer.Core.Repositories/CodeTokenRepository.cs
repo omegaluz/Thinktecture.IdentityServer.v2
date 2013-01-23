@@ -5,12 +5,13 @@
 
 using System;
 using System.Linq;
+using Thinktecture.IdentityServer.Models;
 
 namespace Thinktecture.IdentityServer.Repositories.Sql
 {
     public class CodeTokenRepository : ICodeTokenRepository
     {
-        public string AddCode(int clientId, string userName, string scope)
+        public string AddCode(CodeTokenType type, int clientId, string userName, string scope)
         {
             using (var entities = IdentityServerConfigurationContext.Get())
             {
@@ -18,6 +19,7 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
 
                 var refreshToken = new CodeToken
                 {
+                    Type = (int)type,
                     Code = code,
                     ClientId = clientId,
                     Scope = scope,

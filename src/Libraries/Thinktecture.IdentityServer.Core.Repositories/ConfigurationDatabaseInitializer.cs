@@ -365,7 +365,8 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
                     ClientSecret = "secret",
                     AllowImplicitFlow = false,
                     AllowResourceOwnerFlow = false,
-                    AllowCodeFlow = true
+                    AllowCodeFlow = true,
+                    AllowRefreshToken = true
                 }
             };
         }

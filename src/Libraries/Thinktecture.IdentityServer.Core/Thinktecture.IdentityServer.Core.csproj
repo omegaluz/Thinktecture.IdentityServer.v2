@@ -122,7 +122,8 @@
     <Compile Include="Models\Configuration\OAuth2Configuration.cs" />
     <Compile Include="Models\Configuration\FederationMetadataConfiguration.cs" />
     <Compile Include="Models\Configuration\ProtocolConfiguration.cs" />
-    <Compile Include="Models\RefreshToken.cs" />
+    <Compile Include="Models\CodeToken.cs" />
+    <Compile Include="Models\CodeTokenType.cs" />
     <Compile Include="Models\OAuth2ProviderTypes.cs" />
     <Compile Include="Models\DelegationSetting.cs" />
     <Compile Include="Endpoints.cs" />

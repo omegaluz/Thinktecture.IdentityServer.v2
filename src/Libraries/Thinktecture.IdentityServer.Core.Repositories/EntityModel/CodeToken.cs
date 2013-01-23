@@ -14,5 +14,7 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
         public string UserName { get; set; }
 
         public string Scope { get; set; }
+
+        public int Type { get; set; }
     }
 }

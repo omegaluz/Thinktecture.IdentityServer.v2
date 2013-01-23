@@ -186,7 +186,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             {
                 if (includeRefreshToken)
                 {
-                    tokenResponse.RefreshToken = RefreshTokenRepository.AddCode(client.ID, userName, scope.Uri.AbsoluteUri);
+                    tokenResponse.RefreshToken = RefreshTokenRepository.AddCode(CodeTokenType.RefreshTokenIdentifier, client.ID, userName, scope.Uri.AbsoluteUri);
                 }
 
                 var resp = Request.CreateResponse<TokenResponse>(HttpStatusCode.OK, tokenResponse);
