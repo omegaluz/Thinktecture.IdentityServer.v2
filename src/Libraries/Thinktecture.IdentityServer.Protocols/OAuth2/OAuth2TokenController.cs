@@ -92,11 +92,13 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             else if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.RefreshToken, System.StringComparison.Ordinal))
             {
                 // TODO: refresh tokens allowed?
-                return ProcessRefreshTokenRequest(client, tokenRequest.Refresh_Token);
+                if (client.AllowRefreshToken)
+                {
+                    return ProcessRefreshTokenRequest(client, tokenRequest.Refresh_Token);
+                }
             } // or code grant
             else if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.AuthorizationCode, System.StringComparison.Ordinal))
             {
-                // TODO: refresh tokens allowed?
                 return ProcessAuthorizationCodeRequest(client, tokenRequest.Code);
             }
 
@@ -106,6 +108,8 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
 
         private HttpResponseMessage ProcessAuthorizationCodeRequest(Client client, string code)
         {
+            // handle differently!
+
             return ProcessRefreshTokenRequest(client, code);
         }
 
@@ -121,8 +125,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
 
             if (UserRepository.ValidateUser(userName, password))
             {
-                // TODO: make refresh token configurable
-                return CreateTokenResponse(userName, client, appliesTo, includeRefreshToken: true);
+                return CreateTokenResponse(userName, client, appliesTo, includeRefreshToken: client.AllowRefreshToken);
             }
             else
             {
@@ -143,9 +146,8 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                 if (token.ClientId == client.ID)
                 {
                     // 3. call STS 
-                    // TODO: make refresh token configurable
                     RefreshTokenRepository.DeleteCode(token.Code);
-                    return CreateTokenResponse(token.UserName, client, new EndpointReference(token.Scope), includeRefreshToken: true);
+                    return CreateTokenResponse(token.UserName, client, new EndpointReference(token.Scope), includeRefreshToken: client.AllowRefreshToken);
                 }
 
                 Tracing.Error("Invalid client for refresh token. " + client.Name + " / " + refreshToken);

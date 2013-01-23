@@ -62,7 +62,8 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                     {
                         ResourceUri = rp.Realm.AbsoluteUri,
                         ResourceName = rp.Name,
-                        ClientName = client.ClientId
+                        ClientName = client.ClientId,
+                        RefreshTokenEnabled = client.AllowRefreshToken
                     };
 
                     return View("ShowConsent", vm);
