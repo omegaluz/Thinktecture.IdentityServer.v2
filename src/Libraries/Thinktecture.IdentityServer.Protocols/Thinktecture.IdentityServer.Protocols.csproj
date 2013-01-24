@@ -66,7 +66,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="Thinktecture.IdentityModel, Version=2.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\Thinktecture.IdentityModel.2.3.0\lib\net45\Thinktecture.IdentityModel.dll</HintPath>
+      <HintPath>..\..\..\packages\Thinktecture.IdentityModel.2.3.1\lib\net45\Thinktecture.IdentityModel.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
