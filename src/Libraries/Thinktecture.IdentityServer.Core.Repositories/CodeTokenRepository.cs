@@ -23,7 +23,8 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
                     Code = code,
                     ClientId = clientId,
                     Scope = scope,
-                    UserName = userName
+                    UserName = userName,
+                    TimeStamp = DateTime.UtcNow
                 };
 
                 entities.CodeTokens.Add(refreshToken);

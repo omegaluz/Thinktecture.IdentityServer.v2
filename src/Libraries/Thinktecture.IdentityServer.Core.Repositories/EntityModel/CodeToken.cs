@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Thinktecture.IdentityServer.Repositories.Sql
 {
@@ -16,5 +17,7 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
         public string Scope { get; set; }
 
         public int Type { get; set; }
+
+        public DateTime TimeStamp { get; set; }
     }
 }

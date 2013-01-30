@@ -61,7 +61,7 @@ namespace Thinktecture.IdentityServer.Protocols
         public bool TryIssueToken(EndpointReference appliesTo, ClaimsPrincipal principal, string tokenType, out TokenResponse response)
         {
             SecurityToken token = null;
-            response = new TokenResponse { TokenType = tokenType };
+            response = new TokenResponse { TokenType = "Bearer" };
 
             var result = TryIssueToken(appliesTo, principal, tokenType, out token);
             if (result == false)

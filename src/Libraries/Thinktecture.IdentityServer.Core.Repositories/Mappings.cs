@@ -495,7 +495,8 @@ namespace Thinktecture.IdentityServer.Repositories.Sql
                 Scope = token.Scope,
                 UserName = token.UserName,
                 Code = token.Code,
-                Type = (CodeTokenType)token.Type
+                Type = (CodeTokenType)token.Type,
+                TimeStamp = token.TimeStamp
             };
         }
         #endregion

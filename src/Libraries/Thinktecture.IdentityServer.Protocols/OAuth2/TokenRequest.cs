@@ -8,9 +8,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Thinktecture.IdentityServer.Protocols.OAuth2
 {
+    [JsonObject]
     public class TokenRequest
     {
-        [Required]
         [JsonProperty(PropertyName = "grant_type")]
         public string Grant_Type { get; set; }
 

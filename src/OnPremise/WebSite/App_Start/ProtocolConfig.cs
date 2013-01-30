@@ -131,8 +131,6 @@ namespace Thinktecture.IdentityServer.Web
                 DefaultAuthenticationScheme = "Basic",
             };
 
-            // accept arbitrary credentials on basic auth header,
-            // validation will be done in the protocol endpoint
             authConfig.AddBasicAuthentication((id, secret) => true, retainPassword: true);
             return authConfig;
         }

@@ -43,98 +43,65 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             RefreshTokenRepository = refreshTokenRepository;
         }
 
-        public HttpResponseMessage Post(TokenRequest tokenRequest)
+        public HttpResponseMessage Post([FromBody] TokenRequest tokenRequest)
         {
             Tracing.Information("OAuth2 endpoint called.");
 
             Client client = null;
-            if (!ValidateClient(out client))
-            {
-                Tracing.Error("Invalid client: " + ClaimsPrincipal.Current.Identity.Name);
-                return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidClient);
-            }
+            var error = ValidateRequest(tokenRequest, out client);
+            if (error != null) return error;
 
             Tracing.Information("Client: " + client.Name);
 
+            // read token type from configuration (typically JWT)
             var tokenType = ConfigurationRepository.Global.DefaultHttpTokenType;
 
-            // validate scope
-            EndpointReference appliesTo = null;
-            if (tokenRequest.Grant_Type != OAuth2Constants.GrantTypes.AuthorizationCode)
+            // switch over the grant type
+            if (tokenRequest.Grant_Type.Equals(OAuth2Constants.GrantTypes.Password))
             {
-                try
-                {
-                    appliesTo = new EndpointReference(tokenRequest.Scope);
-                    Tracing.Information("OAuth2 endpoint called for scope: " + tokenRequest.Scope);
-                }
-                catch
-                {
-                    Tracing.Error("Malformed scope: " + tokenRequest.Scope);
-                    return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidScope);
-                }
+                return ProcessResourceOwnerCredentialRequest(tokenRequest, tokenType, client);
             }
-
-            // check grant type - password == resource owner password flow
-            if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.Password, System.StringComparison.Ordinal))
+            else if (tokenRequest.Grant_Type.Equals(OAuth2Constants.GrantTypes.AuthorizationCode))
             {
-                if (ConfigurationRepository.OAuth2.EnableResourceOwnerFlow)
-                {
-                    if (client.AllowResourceOwnerFlow)
-                    {
-                        return ProcessResourceOwnerCredentialRequest(tokenRequest.UserName, tokenRequest.Password, appliesTo, tokenType, client);
-                    }
-                    else
-                    {
-                        Tracing.Error("Client is not allowed to use the resource owner password flow:" + client.Name);
-                    }
-                }
-            } // or refresh token
+                return ProcessAuthorizationCodeRequest(client, tokenRequest.Code, tokenType);
+            }
             else if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.RefreshToken, System.StringComparison.Ordinal))
             {
-                // TODO: refresh tokens allowed?
-                if (client.AllowRefreshToken)
-                {
-                    return ProcessRefreshTokenRequest(client, tokenRequest.Refresh_Token);
-                }
-            } // or code grant
-            else if (string.Equals(tokenRequest.Grant_Type, OAuth2Constants.GrantTypes.AuthorizationCode, System.StringComparison.Ordinal))
-            {
-                return ProcessAuthorizationCodeRequest(client, tokenRequest.Code);
+                return ProcessRefreshTokenRequest(client, tokenRequest.Refresh_Token, tokenType);
             }
 
             Tracing.Error("invalid grant type: " + tokenRequest.Grant_Type);
             return OAuthErrorResponseMessage(OAuth2Constants.Errors.UnsupportedGrantType);
         }
 
-        private HttpResponseMessage ProcessAuthorizationCodeRequest(Client client, string code)
-        {
-            // handle differently!
-
-            return ProcessRefreshTokenRequest(client, code);
-        }
-
-        private HttpResponseMessage ProcessResourceOwnerCredentialRequest(string userName, string password, EndpointReference appliesTo, string tokenType, Client client)
+        private HttpResponseMessage ProcessResourceOwnerCredentialRequest(TokenRequest request, string tokenType, Client client)
         {
             Tracing.Information("Starting resource owner password credential flow for client: " + client.Name);
+            var appliesTo = new EndpointReference(request.Scope);
 
-            if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.Password))
             {
                 Tracing.Error("Invalid resource owner credentials for: " + appliesTo.Uri.AbsoluteUri);
                 return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidGrant);
             }
 
-            if (UserRepository.ValidateUser(userName, password))
+            if (UserRepository.ValidateUser(request.UserName, request.Password))
             {
-                return CreateTokenResponse(userName, client, appliesTo, includeRefreshToken: client.AllowRefreshToken);
+                return CreateTokenResponse(request.UserName, client, appliesTo, tokenType, includeRefreshToken: client.AllowRefreshToken);
             }
             else
             {
-                Tracing.Error("Resource owner credential validation failed: " + userName);
+                Tracing.Error("Resource owner credential validation failed: " + request.UserName);
                 return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidGrant);
             }
         }
 
-        private HttpResponseMessage ProcessRefreshTokenRequest(Client client, string refreshToken)
+        private HttpResponseMessage ProcessAuthorizationCodeRequest(Client client, string code, string tokenType)
+        {
+            return ProcessRefreshTokenRequest(client, code, tokenType);
+        }
+
+        private HttpResponseMessage ProcessRefreshTokenRequest(Client client, string refreshToken, string tokenType)
         {
             Tracing.Information("Processing refresh token request for client: " + client.Name);
 
@@ -147,7 +114,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                 {
                     // 3. call STS 
                     RefreshTokenRepository.DeleteCode(token.Code);
-                    return CreateTokenResponse(token.UserName, client, new EndpointReference(token.Scope), includeRefreshToken: client.AllowRefreshToken);
+                    return CreateTokenResponse(token.UserName, client, new EndpointReference(token.Scope), tokenType, includeRefreshToken: client.AllowRefreshToken);
                 }
 
                 Tracing.Error("Invalid client for refresh token. " + client.Name + " / " + refreshToken);
@@ -158,13 +125,8 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
             return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidGrant);
         }
 
-        private HttpResponseMessage CreateTokenResponse(string userName, Client client, EndpointReference scope, bool includeRefreshToken, string tokenType = null)
+        private HttpResponseMessage CreateTokenResponse(string userName, Client client, EndpointReference scope, string tokenType, bool includeRefreshToken)
         {
-            if (string.IsNullOrWhiteSpace(tokenType))
-            {
-                tokenType = ConfigurationRepository.Global.DefaultHttpTokenType;
-            }
-
             var auth = new AuthenticationHelper();
 
             var principal = auth.CreatePrincipal(userName, "OAuth2",
@@ -204,6 +166,76 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
                 string.Format("{{ \"{0}\": \"{1}\" }}", OAuth2Constants.Errors.Error, error));
         }
 
+        private HttpResponseMessage ValidateRequest(TokenRequest request, out Client client)
+        {
+            client = null;
+
+            // grant type is required
+            if (string.IsNullOrWhiteSpace(request.Grant_Type))
+            {
+                return OAuthErrorResponseMessage(OAuth2Constants.Errors.UnsupportedGrantType);
+            }
+
+            // check supported grant types
+            if (!request.Grant_Type.Equals(OAuth2Constants.GrantTypes.AuthorizationCode) &&
+                !request.Grant_Type.Equals(OAuth2Constants.GrantTypes.Password) &&
+                !request.Grant_Type.Equals(OAuth2Constants.GrantTypes.RefreshToken))
+            {
+                return OAuthErrorResponseMessage(OAuth2Constants.Errors.UnsupportedGrantType);
+            }
+
+            // resource owner password flow requires a well-formed scope
+            EndpointReference appliesTo = null;
+            if (request.Grant_Type.Equals(OAuth2Constants.GrantTypes.Password))
+            {
+                try
+                {
+                    appliesTo = new EndpointReference(request.Scope);
+                    Tracing.Information("OAuth2 endpoint called for scope: " + request.Scope);
+                }
+                catch
+                {
+                    Tracing.Error("Malformed scope: " + request.Scope);
+                    return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidScope);
+                }
+            }
+
+            if (!ValidateClient(out client))
+            {
+                Tracing.Error("Invalid client: " + ClaimsPrincipal.Current.Identity.Name);
+                return OAuthErrorResponseMessage(OAuth2Constants.Errors.InvalidClient);
+            }
+
+            // validate grant types against global and client configuration
+            if (request.Grant_Type.Equals(OAuth2Constants.GrantTypes.AuthorizationCode))
+            {
+                if (!ConfigurationRepository.OAuth2.EnableCodeFlow ||
+                    !client.AllowCodeFlow)
+                {
+                    return OAuthErrorResponseMessage(OAuth2Constants.Errors.UnsupportedGrantType);
+                }
+            }
+
+            if (request.Grant_Type.Equals(OAuth2Constants.GrantTypes.Password))
+            {
+                if (!ConfigurationRepository.OAuth2.EnableResourceOwnerFlow ||
+                    !client.AllowResourceOwnerFlow)
+                {
+                    return OAuthErrorResponseMessage(OAuth2Constants.Errors.UnsupportedGrantType);
+                }
+            }
+
+            if (request.Grant_Type.Equals(OAuth2Constants.GrantTypes.RefreshToken))
+            {
+                if (!client.AllowRefreshToken)
+                {
+                    return OAuthErrorResponseMessage(OAuth2Constants.Errors.UnsupportedGrantType);
+                }
+            }
+
+            return null;
+        }
+
         private bool ValidateClient(out Client client)
         {
             client = null;
@@ -223,7 +255,7 @@ namespace Thinktecture.IdentityServer.Protocols.OAuth2
 
             return ClientsRepository.ValidateAndGetClient(
                 ClaimsPrincipal.Current.Identity.Name,
-                passwordClaim.Value, 
+                passwordClaim.Value,
                 out client);
         }
     }

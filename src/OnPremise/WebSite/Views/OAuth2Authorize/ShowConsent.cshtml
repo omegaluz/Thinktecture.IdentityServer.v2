@@ -12,13 +12,12 @@
     is requesting permission to access a resource on your behalf:</dt>
     <dd><b>Resource Name:</b> @Model.ResourceName</dd>
     <dd><b>Resource ID:</b> @Model.ResourceUri</dd>
-    
-    @if (Model.RefreshTokenEnabled)
-    {
-        <dd><b>The client will be able to access the resource, even when you are offline.</b></dd> 
-    }
-
 </dl>
+
+@if (Model.RefreshTokenEnabled)
+{
+    <p><b>The client will be able to access the resource, even when you are offline.</b></p> 
+}
 
 @using (Html.BeginForm())
 {

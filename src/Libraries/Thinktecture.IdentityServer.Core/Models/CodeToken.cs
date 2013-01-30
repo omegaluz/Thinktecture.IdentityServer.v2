@@ -20,5 +20,7 @@ namespace Thinktecture.IdentityServer.Models
         public string Scope { get; set; }
 
         public CodeTokenType Type { get; set; }
+
+        public DateTime TimeStamp { get; set; }
     }
 }
