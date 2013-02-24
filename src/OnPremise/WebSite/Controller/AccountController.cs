@@ -5,6 +5,8 @@
 
 using DotNetOpenAuth.AspNet;
 using Omegaluz.SimpleOAuth;
+using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens;
 using System.Security.Cryptography.X509Certificates;
 using System.Web;
@@ -12,6 +14,7 @@ using System.Web.Mvc;
 using System.Web.Security;
 using Thinktecture.IdentityServer.Protocols;
 using Thinktecture.IdentityServer.Repositories;
+using Thinktecture.IdentityServer.Web.Providers;
 using Thinktecture.IdentityServer.Web.ViewModels;
 
 namespace Thinktecture.IdentityServer.Web.Controllers
@@ -31,7 +34,7 @@ namespace Thinktecture.IdentityServer.Web.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
+        //[ValidateAntiForgeryToken]
         public ActionResult ExternalLogin(string provider, string returnUrl)
         {
             return new ExternalLoginResult(provider, Url.Action("ExternalLoginCallback", new { ReturnUrl = returnUrl }));
@@ -51,6 +54,17 @@ namespace Thinktecture.IdentityServer.Web.Controllers
 
             if (SimpleOAuthSecurity.Login(result.Provider, result.ProviderUserId, createPersistentCookie: false))
             {
+
+                var userName = SimpleOAuthSecurity.GetUserName(result.Provider, result.ProviderUserId);
+
+                return SignIn(
+                    userName, //model.UserName,
+                    AuthenticationMethods.Password,
+                    returnUrl, //model.ReturnUrl,
+                    false, //model.EnableSSO,
+                    ConfigurationRepository.Global.SsoCookieLifetime);
+
+
                 return RedirectToLocal(returnUrl);
             }
 
@@ -75,7 +89,7 @@ namespace Thinktecture.IdentityServer.Web.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
+        //[ValidateAntiForgeryToken]
         public ActionResult ExternalLoginConfirmation(RegisterExternalLoginModel model, string returnUrl)
         {
             string provider = null;
@@ -133,6 +147,113 @@ namespace Thinktecture.IdentityServer.Web.Controllers
         {
             ViewBag.ReturnUrl = returnUrl;
             return PartialView("_ExternalLoginsListPartial", SimpleOAuthSecurity.RegisteredClientData);
+        }
+
+        [ChildActionOnly]
+        public ActionResult RemoveExternalLogins()
+        {
+            ICollection<OAuthAccount> accounts = SimpleOAuthSecurity.GetAccountsFromUserName(User.Identity.Name);
+            List<ExternalLogin> externalLogins = new List<ExternalLogin>();
+            foreach (OAuthAccount account in accounts)
+            {
+                AuthenticationClientData clientData = SimpleOAuthSecurity.GetOAuthClientData(account.Provider);
+
+                externalLogins.Add(new ExternalLogin
+                {
+                    Provider = account.Provider,
+                    ProviderDisplayName = clientData.DisplayName,
+                    ProviderUserId = account.ProviderUserId,
+                });
+            }
+
+            ViewBag.ShowRemoveButton = externalLogins.Count > 1 || SimpleOAuthSecurity.HasLocalAccount(Membership.GetUser(User.Identity.Name).ProviderUserKey);
+            return PartialView("_RemoveExternalLoginsPartial", externalLogins);
+        }
+
+
+        #endregion
+
+        #region Manage
+
+                //
+        // GET: /Account/Manage
+
+        public ActionResult Manage(ManageMessageId? message)
+        {
+            ViewBag.StatusMessage =
+                message == ManageMessageId.ChangePasswordSuccess ? "Your password has been changed."
+                : message == ManageMessageId.SetPasswordSuccess ? "Your password has been set."
+                : message == ManageMessageId.RemoveLoginSuccess ? "The external login was removed."
+                : "";
+
+            ViewBag.HasLocalPassword = SimpleOAuthSecurity.HasLocalAccount(Membership.GetUser(User.Identity.Name).ProviderUserKey);
+
+            ViewBag.ReturnUrl = Url.Action("Manage");
+            return View();
+        }
+
+        //
+        // POST: /Account/Manage
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Manage(LocalPasswordModel model)
+        {
+            bool hasLocalAccount = SimpleOAuthSecurity.HasLocalAccount(Membership.GetUser(User.Identity.Name).ProviderUserKey);
+            ViewBag.HasLocalPassword = hasLocalAccount;
+            ViewBag.ReturnUrl = Url.Action("Manage");
+            if (hasLocalAccount)
+            {
+                if (ModelState.IsValid)
+                {
+                    // ChangePassword will throw an exception rather than return false in certain failure scenarios.
+                    bool changePasswordSucceeded;
+                    try
+                    {
+                        var user = Membership.GetUser(User.Identity.Name);
+                        changePasswordSucceeded = user.ChangePassword(model.OldPassword, model.NewPassword);
+                    }
+                    catch (Exception)
+                    {
+                        changePasswordSucceeded = false;
+                    }
+
+                    if (changePasswordSucceeded)
+                    {
+                        return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "The current password is incorrect or the new password is invalid.");
+                    }
+                }
+            }
+            else
+            {
+                // User does not have a local password so remove any validation errors caused by a missing
+                // OldPassword field
+                ModelState state = ModelState["OldPassword"];
+                if (state != null)
+                {
+                    state.Errors.Clear();
+                }
+
+                if (ModelState.IsValid)
+                {
+                    try
+                    {
+                        Membership.CreateUser(User.Identity.Name, model.NewPassword);
+                        return RedirectToAction("Manage", new { Message = ManageMessageId.SetPasswordSuccess });
+                    }
+                    catch (Exception)
+                    {
+                        ModelState.AddModelError("", String.Format("Unable to create local account. An account with the name \"{0}\" may already exist.", User.Identity.Name));
+                    }
+                }
+            }
+
+            // If we got this far, something failed, redisplay form
+            return View(model);
         }
 
         #endregion
@@ -232,7 +353,7 @@ namespace Thinktecture.IdentityServer.Web.Controllers
             };
 
             if (mobile) vm.IsSigninRequest = true;
-            return View(vm);
+            return View("SignIn", vm);
         }
 
         // handles the signin

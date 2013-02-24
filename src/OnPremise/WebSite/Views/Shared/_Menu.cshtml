@@ -11,6 +11,8 @@
         @: &nbsp;
         @Html.ActionLink("[sign out]", "signout", "account", new{area=""}, null)
         @: &nbsp;
+        @Html.ActionLink("[manage account]", "manage", "account", new{area=""}, null)
+        @: &nbsp;
         @:(signed in as @Context.User.Identity.Name)
     }
     else

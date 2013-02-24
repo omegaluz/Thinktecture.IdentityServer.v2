@@ -92,8 +92,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Omegaluz.SimpleOAuth">
-      <HintPath>..\..\..\packages\Omegaluz.SimpleOAuth.0.1.4802.22787\lib\net45\Omegaluz.SimpleOAuth.dll</HintPath>
+    <Reference Include="Omegaluz.SimpleOAuth, Version=0.1.4803.20895, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\packages\Omegaluz.SimpleOAuth.0.1.4803.20895\lib\net45\Omegaluz.SimpleOAuth.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -253,7 +254,9 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="Providers\ExternalLogin.cs" />
     <Compile Include="Providers\ExternalProviders.cs" />
+    <Compile Include="Providers\LocalPasswordModel.cs" />
     <Compile Include="Providers\OAuthMembershipProxyProvider.cs" />
     <Compile Include="Utility\HtmlHelpers.cs" />
     <Compile Include="ViewModels\InitialConfigurationModel.cs" />
@@ -431,6 +434,9 @@
     <Content Include="Views\Account\_ExternalLoginsListPartial.cshtml" />
     <Content Include="Views\Account\ExternalLoginConfirmation.cshtml" />
     <Content Include="Views\Account\ExternalLoginFailure.cshtml" />
+    <Content Include="Views\Account\Manage.cshtml" />
+    <Content Include="Views\Account\_ChangePasswordPartial.cshtml" />
+    <Content Include="Views\Account\_RemoveExternalLoginsPartial.cshtml" />
     <None Include="_bin_deployableAssemblies\x86\sqlcese40.dll" />
     <None Include="_bin_deployableAssemblies\x86\sqlceqp40.dll" />
     <None Include="_bin_deployableAssemblies\x86\sqlceme40.dll" />
