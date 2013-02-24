@@ -163,7 +163,6 @@
     <Compile Include="Tracing\Tracing.cs" />
     <Compile Include="AbsoluteUriAttribute.cs" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>

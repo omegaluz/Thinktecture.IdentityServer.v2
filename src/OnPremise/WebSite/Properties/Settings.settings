@@ -1,0 +1,24 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Thinktecture.IdentityServer.Web.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="FacebookAppId" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">558539204169705</Value>
+    </Setting>
+    <Setting Name="FacebookAppSecret" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">8178ad9b4e352f5a8c4349ec08136fd7</Value>
+    </Setting>
+    <Setting Name="LinkedInConsumerKey" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">v2ae4pcdrxu9</Value>
+    </Setting>
+    <Setting Name="LinkedInConsumerSecret" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">30BQz5D1pPQBDwDw</Value>
+    </Setting>
+    <Setting Name="TwitterConsumerKey" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">W6gy7E7YSg9dDAvhzGIl1A</Value>
+    </Setting>
+    <Setting Name="TwitterConsumerSecret" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">y7tFMtEAxQpjPbNTawoUaRxPFR1JkmU8LWqTMs</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

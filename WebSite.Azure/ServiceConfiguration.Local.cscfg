@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceConfiguration serviceName="WebSite.Azure" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceConfiguration" osFamily="3" osVersion="*" schemaVersion="2012-10.1.8">
+  <Role name="WebSite">
+    <Instances count="1" />
+    <ConfigurationSettings>
+      <!--<Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https;AccountName=twdevstorage1;AccountKey=0FjuoCJmzusdGQYLgLZPOUiIPRh39Cs1FspWuohJcS6MbsG/zjpiFNxLkw/xEJznsxOcHnKqSys9asWnX3IUEA==" />-->
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
+    </ConfigurationSettings>
+    <Certificates>
+      <Certificate name="SSL Certificate" thumbprint="4FC7D0B72342660EE3E49FF952B4A944AD63A934" thumbprintAlgorithm="sha1" />
+    </Certificates>
+  </Role>
+</ServiceConfiguration>

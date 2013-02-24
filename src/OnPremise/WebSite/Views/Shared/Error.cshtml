@@ -1,4 +1,4 @@
-﻿@{
+﻿@*@{
     Layout = null;
 }
 
@@ -17,4 +17,54 @@
         <h2>Sorry, an error occurred while processing your request.</h2>
     </section>
 </body>
-</html>
+</html>*@
+
+@model System.Web.Mvc.HandleErrorInfo
+
+@{
+    Layout = null;
+    ViewBag.Title = "Error";
+    var baseMessage = Model.Exception.GetBaseException().Message;
+    var message = Model.Exception.Message;
+}
+
+    <h1>
+        <span class="text">Error</span>
+    </h1>
+    <div class="topBar">
+        <h2>
+            <span class="text">Sorry, an error occurred while processing your request.</span>
+        </h2>
+    </div>
+
+    <div class="errorArea">@* this is wrapped in a container in case the error came from ajax *@
+        <h3>
+            <span class="text">
+                @if (string.IsNullOrEmpty(message) || baseMessage == message)
+                { 
+                    @baseMessage
+                }
+                else
+                {
+                    @message
+                }
+            </span>
+            @*<pre class="text" style="white-space: pre-wrap; /* css-3 */ white-space: -moz-pre-wrap !important;
+                /* mozilla, since 1999 */ white-space: -pre-wrap; /* opera 4-6 */ white-space: -o-pre-wrap;
+                /* opera 7 */ word-wrap: break-word; /* internet explorer 5.5+ */">
+            </pre>*@
+
+            <br />
+
+            @*<a href="@Url.Action("Index", "Application")">&laquo; @StringResources.Views_Shared_Error_ReturnLink</a>*@
+        </h3>
+
+        <div class="exceptionStackTrace">
+            <h4>
+                <span class="text">StackTrace:</span>
+            </h4>
+            <pre class="text" style="white-space: pre-wrap; /* css-3 */ white-space: -moz-pre-wrap !important;
+                /* mozilla, since 1999 */ white-space: -pre-wrap; /* opera 4-6 */ white-space: -o-pre-wrap;
+                /* opera 7 */ word-wrap: break-word; /* internet explorer 5.5+ */ padding: 1em;">@Model.Exception.GetBaseException().StackTrace</pre>
+        </div>
+    </div>

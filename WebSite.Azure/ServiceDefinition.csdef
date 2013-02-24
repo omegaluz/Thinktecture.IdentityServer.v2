@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ServiceDefinition name="WebSite.Azure" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2012-10.1.8">
+  <WebRole name="WebSite" vmsize="Small">
+    <Sites>
+      <Site name="Web">
+        <Bindings>
+          <Binding name="Endpoint1" endpointName="SSL Endpoint" />
+        </Bindings>
+      </Site>
+    </Sites>
+    <Endpoints>
+      <InputEndpoint name="SSL Endpoint" protocol="https" port="443" certificate="SSL Certificate" />
+    </Endpoints>
+    <Imports>
+      <Import moduleName="Diagnostics" />
+    </Imports>
+    <Certificates>
+      <Certificate name="SSL Certificate" storeLocation="LocalMachine" storeName="My" />
+    </Certificates>
+    <LocalResources>
+    </LocalResources>
+  </WebRole>
+</ServiceDefinition>
