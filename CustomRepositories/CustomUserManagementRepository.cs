@@ -31,31 +31,31 @@ namespace CustomRepositories
 
         public void SetRolesForUser(string userName, IEnumerable<string> roles)
         {
-            var userRoles = Roles.GetRolesForUser(userName);
+            var userRoles = System.Web.Security.Roles.GetRolesForUser(userName);
 
             if (userRoles.Length != 0)
             {
-                Roles.RemoveUserFromRoles(userName, userRoles);
+                System.Web.Security.Roles.RemoveUserFromRoles(userName, userRoles);
             }
 
-            Roles.AddUserToRoles(userName, roles.ToArray());
+            System.Web.Security.Roles.AddUserToRoles(userName, roles.ToArray());
         }
 
         public IEnumerable<string> GetRolesForUser(string userName)
         {
-            return Roles.GetRolesForUser(userName);
+            return System.Web.Security.Roles.GetRolesForUser(userName);
         }
 
         public IEnumerable<string> GetRoles()
         {
-            return Roles.GetAllRoles();
+            return System.Web.Security.Roles.GetAllRoles();
         }
 
         public void CreateRole(string roleName)
         {
             try
             {
-                Roles.CreateRole(roleName);
+                System.Web.Security.Roles.CreateRole(roleName);
             }
             catch (ProviderException)
             { }
@@ -65,7 +65,7 @@ namespace CustomRepositories
         {
             try
             {
-                Roles.DeleteRole(roleName);
+                System.Web.Security.Roles.DeleteRole(roleName);
             }
             catch (ProviderException)
             { }
