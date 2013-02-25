@@ -91,29 +91,28 @@ namespace Thinktecture.IdentityServer.Web.Controllers
 
             if (ModelState.IsValid)
             {
-                /*
-                // Insert a new user into the database
-                using (UsersContext db = new UsersContext())
-                {
-                    UserProfile user = db.UserProfiles.FirstOrDefault(u => u.UserName.ToLower() == model.UserName.ToLower());
-                    // Check if user already exists
-                    if (user == null)
-                    {
-                        // Insert name into the profile table
-                        db.UserProfiles.Add(new UserProfile { UserName = model.UserName });
-                        db.SaveChanges();
 
-                        SimpleOAuthSecurity.CreateOrUpdateAccount(provider, providerUserId, model.UserName);
-                        SimpleOAuthSecurity.Login(provider, providerUserId, createPersistentCookie: false);
+                //// Insert a new user into the database
+                //using (UsersContext db = new UsersContext())
+                //{
+                //    UserProfile user = db.UserProfiles.FirstOrDefault(u => u.UserName.ToLower() == model.UserName.ToLower());
+                //    // Check if user already exists
+                //    if (user == null)
+                //    {
+                //        // Insert name into the profile table
+                //        db.UserProfiles.Add(new UserProfile { UserName = model.UserName });
+                //        db.SaveChanges();
 
-                        return RedirectToLocal(returnUrl);
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("UserName", "User name already exists. Please enter a different user name.");
-                    }
-                }
-                */
+                //        SimpleOAuthSecurity.CreateOrUpdateAccount(provider, providerUserId, model.UserName);
+                //        SimpleOAuthSecurity.Login(provider, providerUserId, createPersistentCookie: false);
+
+                //        return RedirectToLocal(returnUrl);
+                //    }
+                //    else
+                //    {
+                //        ModelState.AddModelError("UserName", "User name already exists. Please enter a different user name.");
+                //    }
+                //}
             }
 
             ViewBag.ProviderDisplayName = SimpleOAuthSecurity.GetOAuthClientData(provider).DisplayName;
@@ -230,7 +229,7 @@ namespace Thinktecture.IdentityServer.Web.Controllers
                 {
                     try
                     {
-                        Membership.CreateUser(User.Identity.Name, model.NewPassword);
+                        SimpleOAuthSecurity.CreateAccount(User.Identity.Name, model.NewPassword);
                         return RedirectToAction("Manage", new { Message = ManageMessageId.SetPasswordSuccess });
                     }
                     catch (Exception)

@@ -92,9 +92,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Omegaluz.SimpleOAuth, Version=0.1.4803.20895, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Omegaluz.SimpleOAuth, Version=0.1.4804.17326, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\Omegaluz.SimpleOAuth.0.1.4803.20895\lib\net45\Omegaluz.SimpleOAuth.dll</HintPath>
+      <HintPath>..\..\..\packages\Omegaluz.SimpleOAuth.0.1.4804.17326\lib\net45\Omegaluz.SimpleOAuth.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />

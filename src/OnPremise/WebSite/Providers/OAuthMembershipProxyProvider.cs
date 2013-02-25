@@ -144,6 +144,65 @@ namespace Thinktecture.IdentityServer.Web.Providers
             }
         }
 
+        public override string CreateAccount(string userName, string password, bool requireConfirmationToken = false)
+        {
+            
+            // check to see if the user exists - if it does - delete it, recreate it, and reassociate the external logins with the new userid
+
+            var oldUser = Membership.GetUser(userName);
+            if (oldUser != null)
+            {
+
+                // delete the old user
+                if (!Membership.DeleteUser(userName))
+                {
+                    throw new MembershipCreateUserException(MembershipCreateStatus.ProviderError);
+                }
+
+                using (var db = new ExternalProvidersContext())
+                {
+    
+                    // get the old account
+                    try
+                    {
+                        var account = db.OAuthMembership
+                            .First(e => e.UserId == (Guid)oldUser.ProviderUserKey);
+
+                        // create the new user
+
+                        var newUser = Membership.CreateUser(userName, password);
+                        
+                        // update the userid on the old oauth membership account
+
+                        account.UserId = (Guid)newUser.ProviderUserKey;
+
+                        // save the changes
+                        db.SaveChanges();
+                    }
+                    catch (Exception)
+                    {
+                        throw new MembershipCreateUserException(MembershipCreateStatus.ProviderError);
+                    }
+
+                    // we don't require a confirmation token for the sql membership provider (default)\
+                    return null;
+
+                }
+            }
+
+            throw new MembershipCreateUserException(MembershipCreateStatus.ProviderError);
+        }
+
+        public override void CreateUserRow(string userName)
+        {
+            using (var db = new ExternalProvidersContext())
+            {
+
+            }
+
+            base.CreateUserRow(userName);
+        }
+
         public object GetUserId(string userName)
         {
             var result = Membership.GetUser(userName);
