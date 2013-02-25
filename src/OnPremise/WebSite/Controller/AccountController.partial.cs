@@ -108,7 +108,15 @@ namespace Thinktecture.IdentityServer.Web.Controllers
 
                     SimpleOAuthSecurity.Login(provider, providerUserId, createPersistentCookie: false);
 
-                    return RedirectToLocal(returnUrl);
+                    return SignIn(
+                        model.UserName, //model.UserName,
+                        AuthenticationMethods.Password,
+                        returnUrl, //model.ReturnUrl,
+                        false, //model.EnableSSO,
+                        ConfigurationRepository.Global.SsoCookieLifetime);
+
+
+                    //return RedirectToLocal(returnUrl);
                 }
                 catch (MembershipCreateUserException mex)
                 {
