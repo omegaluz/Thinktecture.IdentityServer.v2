@@ -43,9 +43,23 @@ namespace Thinktecture.IdentityServer.Web.Providers
 
         public override string GetUserNameFromId(object userId)
         {
-            var user = Membership.GetUser(userId); ;
+            string userName = null;
 
-            return user != null ? user.UserName : null;
+            using (var db = new ExternalProvidersContext())
+            {
+                var user = db.Users.FirstOrDefault(e => e.UserId == (Guid)userId);
+                if (user != null)
+                {
+                    userName = user.UserName;
+                }
+            }
+
+            return userName;
+
+
+            //var user = Membership.GetUser(userId);
+
+            //return user != null ? user.UserName : null;
         }
 
         public override object GetUserIdFromOAuth(string provider, string providerUserId)
@@ -209,7 +223,7 @@ namespace Thinktecture.IdentityServer.Web.Providers
                     // get the applicationID
                     var applicationID = db.Applications.First(e => e.ApplicationName.ToUpper() == Membership.ApplicationName.ToUpper()).ApplicationId;
 
-                    db.Users.Add(new Users { UserName = userName, IsAnyonymous = false, LastActivityDate = DateTime.Now, ApplicationId = applicationID });
+                    db.Users.Add(new Users { UserId = Guid.NewGuid(), UserName = userName, IsAnonymous = false, LastActivityDate = DateTime.Now, ApplicationId = applicationID });
                     db.SaveChanges();
 
                 }
@@ -221,16 +235,42 @@ namespace Thinktecture.IdentityServer.Web.Providers
             }
         }
 
+        public override void DeleteOAuthAccount(string provider, string providerUserId)
+        {
+            using (var db = new ExternalProvidersContext())
+            {
+                // delete account
+                try
+                {
+                    var account = db.OAuthMembership
+                        .First(e => e.Provider.ToUpper() == provider.ToUpper() && e.ProviderUserId.ToUpper() == providerUserId.ToUpper());
+
+                    db.OAuthMembership.Remove(account);
+                    db.SaveChanges();
+                }
+                catch (Exception)
+                {
+                    throw new MembershipCreateUserException(MembershipCreateStatus.ProviderError);
+                }
+            }
+        }
+
         public object GetUserId(string userName)
         {
-            var result = Membership.GetUser(userName);
 
-            if (result != null)
+            var userID = Guid.Empty;
+
+            using (var db = new ExternalProvidersContext())
             {
-                return result.ProviderUserKey;
+                var user = db.Users.FirstOrDefault(e => e.UserName.ToUpper() == userName.ToUpper());
+                if (user != null)
+                {
+                    userID = user.UserId;
+                }
             }
 
-            return Guid.Empty;
+            return userID;
+
         }
 
     }

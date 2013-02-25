@@ -2,12 +2,15 @@
 using Omegaluz.SimpleOAuth;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.IdentityModel.Tokens;
 using System.Linq;
+using System.Transactions;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Security;
 using Thinktecture.IdentityServer.Protocols;
+using Thinktecture.IdentityServer.Repositories;
 using Thinktecture.IdentityServer.Web.Providers;
 using Thinktecture.IdentityServer.Web.ViewModels;
 
@@ -15,6 +18,9 @@ namespace Thinktecture.IdentityServer.Web.Controllers
 {
     public partial class AccountController : AccountControllerBase
     {
+
+        [Import]
+        public IUserManagementRepository UserManagementRepository { get; set; }
 
         #region "External Logins"
 
@@ -96,6 +102,10 @@ namespace Thinktecture.IdentityServer.Web.Controllers
                 {
                     SimpleOAuthSecurity.CreateUserRow(model.UserName);
                     SimpleOAuthSecurity.CreateOrUpdateAccount(provider, providerUserId, model.UserName);
+
+                    // add the user to the roles
+                    UserManagementRepository.SetRolesForUser(model.UserName, new string[] { "Api", "IdentityServerUsers" });
+
                     SimpleOAuthSecurity.Login(provider, providerUserId, createPersistentCookie: false);
 
                     return RedirectToLocal(returnUrl);
@@ -156,6 +166,36 @@ namespace Thinktecture.IdentityServer.Web.Controllers
             ViewBag.ShowRemoveButton = externalLogins.Count > 1 || SimpleOAuthSecurity.HasLocalAccount(Membership.GetUser(User.Identity.Name).ProviderUserKey);
             return PartialView("_RemoveExternalLoginsPartial", externalLogins);
         }
+
+        //
+        // POST: /Account/Disassociate
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Disassociate(string provider, string providerUserId)
+        {
+            string ownerAccount = SimpleOAuthSecurity.GetUserName(provider, providerUserId);
+            ManageMessageId? message = null;
+
+            // Only disassociate the account if the currently logged in user is the owner
+            if (ownerAccount == User.Identity.Name)
+            {
+                // Use a transaction to prevent the user from deleting their last login credential
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions { IsolationLevel = IsolationLevel.Serializable }))
+                {
+                    bool hasLocalAccount = SimpleOAuthSecurity.HasLocalAccount(Membership.GetUser(User.Identity.Name).ProviderUserKey);
+                    if (hasLocalAccount || SimpleOAuthSecurity.GetAccountsFromUserName(User.Identity.Name).Count > 1)
+                    {
+                        SimpleOAuthSecurity.DeleteAccount(provider, providerUserId);
+                        scope.Complete();
+                        message = ManageMessageId.RemoveLoginSuccess;
+                    }
+                }
+            }
+
+            return RedirectToAction("Manage", new { Message = message });
+        }
+
 
         #endregion
 

@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Thinktecture.IdentityServer
 EndProject
 Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "WebSite.Azure", "WebSite.Azure\WebSite.Azure.ccproj", "{5B6337D0-2216-4D07-90EC-C2AEA59D1F2B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CustomRepositories", "CustomRepositories\CustomRepositories.csproj", "{8A3FBE54-2377-41BA-9DCF-5D5C899B1941}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Analysis (Debug)|Any CPU = Analysis (Debug)|Any CPU
@@ -77,6 +79,14 @@ Global
 		{5B6337D0-2216-4D07-90EC-C2AEA59D1F2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B6337D0-2216-4D07-90EC-C2AEA59D1F2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B6337D0-2216-4D07-90EC-C2AEA59D1F2B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A3FBE54-2377-41BA-9DCF-5D5C899B1941}.Analysis (Debug)|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A3FBE54-2377-41BA-9DCF-5D5C899B1941}.Analysis (Debug)|Any CPU.Build.0 = Debug|Any CPU
+		{8A3FBE54-2377-41BA-9DCF-5D5C899B1941}.Debug and Contracts|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A3FBE54-2377-41BA-9DCF-5D5C899B1941}.Debug and Contracts|Any CPU.Build.0 = Debug|Any CPU
+		{8A3FBE54-2377-41BA-9DCF-5D5C899B1941}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A3FBE54-2377-41BA-9DCF-5D5C899B1941}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A3FBE54-2377-41BA-9DCF-5D5C899B1941}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A3FBE54-2377-41BA-9DCF-5D5C899B1941}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

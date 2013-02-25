@@ -37,7 +37,7 @@ namespace Thinktecture.IdentityServer.Web.Providers
         public Guid UserId { get; set; }
         public Guid ApplicationId { get; set; }
         public string UserName { get; set; }
-        public bool IsAnyonymous { get; set; }
+        public bool IsAnonymous { get; set; }
         public DateTime LastActivityDate { get; set; }
     }
 

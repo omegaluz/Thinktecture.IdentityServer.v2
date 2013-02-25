@@ -8,6 +8,7 @@ using System.ComponentModel.Composition;
 using System.IdentityModel.Services;
 using System.Security.Claims;
 using System.Web.Mvc;
+using System.Web.Security;
 using Thinktecture.IdentityServer.Repositories;
 using Thinktecture.IdentityServer.TokenService;
 
@@ -36,6 +37,7 @@ namespace Thinktecture.IdentityServer.Protocols
         {
             if (Request.IsAuthenticated)
             {
+                FormsAuthentication.SignOut();
                 FederatedAuthentication.SessionAuthenticationModule.DeleteSessionTokenCookie();
             }
 
