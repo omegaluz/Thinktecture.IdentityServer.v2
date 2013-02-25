@@ -195,12 +195,30 @@ namespace Thinktecture.IdentityServer.Web.Providers
 
         public override void CreateUserRow(string userName)
         {
-            using (var db = new ExternalProvidersContext())
+            try
             {
 
-            }
+                using (var db = new ExternalProvidersContext())
+                {
 
-            base.CreateUserRow(userName);
+                    if (db.Users.FirstOrDefault(e => e.UserName.ToUpper() == userName.ToUpper()) != null)
+                    {
+                        throw new MembershipCreateUserException(MembershipCreateStatus.DuplicateUserName);
+                    }
+
+                    // get the applicationID
+                    var applicationID = db.Applications.First(e => e.ApplicationName.ToUpper() == Membership.ApplicationName.ToUpper()).ApplicationId;
+
+                    db.Users.Add(new Users { UserName = userName, IsAnyonymous = false, LastActivityDate = DateTime.Now, ApplicationId = applicationID });
+                    db.SaveChanges();
+
+                }
+            }
+            catch (Exception)
+            {
+
+                throw new MembershipCreateUserException(MembershipCreateStatus.ProviderError);
+            }
         }
 
         public object GetUserId(string userName)

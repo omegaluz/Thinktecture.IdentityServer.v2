@@ -92,27 +92,26 @@ namespace Thinktecture.IdentityServer.Web.Controllers
             if (ModelState.IsValid)
             {
 
-                //// Insert a new user into the database
-                //using (UsersContext db = new UsersContext())
-                //{
-                //    UserProfile user = db.UserProfiles.FirstOrDefault(u => u.UserName.ToLower() == model.UserName.ToLower());
-                //    // Check if user already exists
-                //    if (user == null)
-                //    {
-                //        // Insert name into the profile table
-                //        db.UserProfiles.Add(new UserProfile { UserName = model.UserName });
-                //        db.SaveChanges();
+                try
+                {
+                    SimpleOAuthSecurity.CreateUserRow(model.UserName);
+                    SimpleOAuthSecurity.CreateOrUpdateAccount(provider, providerUserId, model.UserName);
+                    SimpleOAuthSecurity.Login(provider, providerUserId, createPersistentCookie: false);
 
-                //        SimpleOAuthSecurity.CreateOrUpdateAccount(provider, providerUserId, model.UserName);
-                //        SimpleOAuthSecurity.Login(provider, providerUserId, createPersistentCookie: false);
+                    return RedirectToLocal(returnUrl);
+                }
+                catch (MembershipCreateUserException mex)
+                {
+                    if (mex.StatusCode == MembershipCreateStatus.DuplicateUserName)
+                    {
+                        ModelState.AddModelError("UserName", "User name already exists. Please enter a different user name.");
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
 
-                //        return RedirectToLocal(returnUrl);
-                //    }
-                //    else
-                //    {
-                //        ModelState.AddModelError("UserName", "User name already exists. Please enter a different user name.");
-                //    }
-                //}
             }
 
             ViewBag.ProviderDisplayName = SimpleOAuthSecurity.GetOAuthClientData(provider).DisplayName;

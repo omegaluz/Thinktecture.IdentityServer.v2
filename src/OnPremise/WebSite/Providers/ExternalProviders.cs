@@ -18,6 +18,7 @@ namespace Thinktecture.IdentityServer.Web.Providers
 
         public DbSet<ExternalProvidersOAuthMembership> OAuthMembership { get; set; }
         public DbSet<Users> Users { get; set; }
+        public DbSet<Applications> Applications { get; set; }
        
     }
 
@@ -38,6 +39,14 @@ namespace Thinktecture.IdentityServer.Web.Providers
         public string UserName { get; set; }
         public bool IsAnyonymous { get; set; }
         public DateTime LastActivityDate { get; set; }
+    }
+
+    public class Applications
+    {
+        [Key]
+        public Guid ApplicationId { get; set; }
+        public string ApplicationName { get; set; }
+        public string Description { get; set; }
     }
 
 }
