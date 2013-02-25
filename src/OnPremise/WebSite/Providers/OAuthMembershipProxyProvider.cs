@@ -2,6 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Configuration;
+using System.Data.Entity.Validation;
+using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 using System.Web;
 using System.Web.Security;
@@ -21,9 +25,15 @@ namespace Thinktecture.IdentityServer.Web.Providers
         //    Container.Current.SatisfyImportsOnce(this);
         //}
 
-        public override bool HasLocalAccount(object userId)
+        public override bool HasLocalAccountFromId(object userId)
         {
             var user = Membership.GetUser(userId);
+            return user != null;
+        }
+
+        public override bool HasLocalAccountFromUserName(string userName)
+        {
+            var user = Membership.GetUser(userName);
             return user != null;
         }
 
@@ -160,51 +170,56 @@ namespace Thinktecture.IdentityServer.Web.Providers
 
         public override string CreateAccount(string userName, string password, bool requireConfirmationToken = false)
         {
-            
-            // check to see if the user exists - if it does - delete it, recreate it, and reassociate the external logins with the new userid
 
-            var oldUser = Membership.GetUser(userName);
-            if (oldUser != null)
+            try
             {
 
-                // delete the old user
-                if (!Membership.DeleteUser(userName))
-                {
-                    throw new MembershipCreateUserException(MembershipCreateStatus.ProviderError);
-                }
+                var existingUserId = GetUserId(userName);
 
                 using (var db = new ExternalProvidersContext())
                 {
-    
-                    // get the old account
-                    try
+                    var newUserName = Membership.GeneratePassword(50, 0);
+                    var newMembership = Membership.CreateUser(newUserName, password);
+                    var newUserId = (Guid)newMembership.ProviderUserKey;
+
+                    // TODO: refactor this
+                    var connectionString = ConfigurationManager.ConnectionStrings["IdentityServerConfiguration"].ConnectionString;
+
+                    using (var conn = new SqlConnection(connectionString))
                     {
-                        var account = db.OAuthMembership
-                            .First(e => e.UserId == (Guid)oldUser.ProviderUserKey);
-
-                        // create the new user
-
-                        var newUser = Membership.CreateUser(userName, password);
-                        
-                        // update the userid on the old oauth membership account
-
-                        account.UserId = (Guid)newUser.ProviderUserKey;
-
-                        // save the changes
-                        db.SaveChanges();
+                        conn.Open();
+                        string updateString = "UPDATE Memberships SET UserId = @OldUserID WHERE UserID = @NewUserID";
+                        var updateCommand = new SqlCommand(updateString, conn);
+                        var oldUserIdParam = updateCommand.Parameters.Add("@OldUserId", System.Data.SqlDbType.UniqueIdentifier);
+                        oldUserIdParam.Value = existingUserId;
+                        var newUserIdParam = updateCommand.Parameters.Add("@NewUserID", System.Data.SqlDbType.UniqueIdentifier);
+                        newUserIdParam.Value = newUserId;
+                        updateCommand.ExecuteNonQuery();
+                        conn.Close();
                     }
-                    catch (Exception)
-                    {
-                        throw new MembershipCreateUserException(MembershipCreateStatus.ProviderError);
-                    }
+
+
+                    // delete the user row that we just created
+                    db.Users.Remove(db.Users.First(e => e.UserId == newUserId));
+                    db.SaveChanges();
 
                     // we don't require a confirmation token for the sql membership provider (default)\
                     return null;
 
                 }
-            }
 
-            throw new MembershipCreateUserException(MembershipCreateStatus.ProviderError);
+            }
+            catch (DbEntityValidationException ex)
+            {
+                var firstError = ex.EntityValidationErrors.First();
+                throw new MembershipCreateUserException(MembershipCreateStatus.ProviderError);
+            }
+            catch (Exception)
+            {
+                throw new MembershipCreateUserException(MembershipCreateStatus.ProviderError);
+            }
+            
+
         }
 
         public override void CreateUserRow(string userName)

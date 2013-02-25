@@ -163,7 +163,7 @@ namespace Thinktecture.IdentityServer.Web.Controllers
                 });
             }
 
-            ViewBag.ShowRemoveButton = externalLogins.Count > 1 || SimpleOAuthSecurity.HasLocalAccount(Membership.GetUser(User.Identity.Name).ProviderUserKey);
+            ViewBag.ShowRemoveButton = externalLogins.Count > 1 || SimpleOAuthSecurity.HasLocalAccountFromUserName(User.Identity.Name);
             return PartialView("_RemoveExternalLoginsPartial", externalLogins);
         }
 
@@ -183,7 +183,7 @@ namespace Thinktecture.IdentityServer.Web.Controllers
                 // Use a transaction to prevent the user from deleting their last login credential
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions { IsolationLevel = IsolationLevel.Serializable }))
                 {
-                    bool hasLocalAccount = SimpleOAuthSecurity.HasLocalAccount(Membership.GetUser(User.Identity.Name).ProviderUserKey);
+                    bool hasLocalAccount = SimpleOAuthSecurity.HasLocalAccountFromUserName(User.Identity.Name);
                     if (hasLocalAccount || SimpleOAuthSecurity.GetAccountsFromUserName(User.Identity.Name).Count > 1)
                     {
                         SimpleOAuthSecurity.DeleteAccount(provider, providerUserId);
@@ -212,7 +212,7 @@ namespace Thinktecture.IdentityServer.Web.Controllers
                 : message == ManageMessageId.RemoveLoginSuccess ? "The external login was removed."
                 : "";
 
-            ViewBag.HasLocalPassword = SimpleOAuthSecurity.HasLocalAccount(Membership.GetUser(User.Identity.Name).ProviderUserKey);
+            ViewBag.HasLocalPassword = SimpleOAuthSecurity.HasLocalAccountFromUserName(User.Identity.Name);
 
             ViewBag.ReturnUrl = Url.Action("Manage");
             return View();
@@ -225,7 +225,7 @@ namespace Thinktecture.IdentityServer.Web.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Manage(LocalPasswordModel model)
         {
-            bool hasLocalAccount = SimpleOAuthSecurity.HasLocalAccount(Membership.GetUser(User.Identity.Name).ProviderUserKey);
+            bool hasLocalAccount = SimpleOAuthSecurity.HasLocalAccountFromUserName(User.Identity.Name);
             ViewBag.HasLocalPassword = hasLocalAccount;
             ViewBag.ReturnUrl = Url.Action("Manage");
             if (hasLocalAccount)
